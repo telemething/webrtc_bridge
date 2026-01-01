@@ -3,8 +3,9 @@
 from launch import LaunchDescription
 from launch.actions import DeclareLaunchArgument, ExecuteProcess
 from launch.conditions import IfCondition
-from launch.substitutions import LaunchConfiguration, PythonExpression
+from launch.substitutions import LaunchConfiguration
 from launch_ros.actions import Node
+from ament_index_python.packages import get_package_share_directory
 import os
 
 
@@ -94,9 +95,9 @@ def generate_launch_description():
         }]
     )
 
-    # Get the client directory (sibling to launch directory)
-    package_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    client_dir = os.path.join(package_dir, 'client')
+    # Get the client directory from the installed package share
+    package_share_dir = get_package_share_directory('webrtc_bridge')
+    client_dir = os.path.join(package_share_dir, 'client')
 
     # Test Publisher (optional)
     test_publisher = ExecuteProcess(

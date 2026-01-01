@@ -94,9 +94,9 @@ def generate_launch_description():
         }]
     )
 
-    # Get the package share directory for the test publisher script
+    # Get the client directory (sibling to launch directory)
     package_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    client_dir = os.path.join(os.path.dirname(package_dir), '..', '..', 'client')
+    client_dir = os.path.join(package_dir, 'client')
 
     # Test Publisher (optional)
     test_publisher = ExecuteProcess(

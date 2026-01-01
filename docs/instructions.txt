@@ -6,14 +6,11 @@ Running the WebRTC Bridge Demo
 
   Terminal 1: WebRTC Bridge Node
 
-  source /opt/ros/humble/setup.bash
-  source /home/mark/workspaces/x1_teleop/install/setup.bash
   ros2 run webrtc_bridge webrtc_bridge_node
 
   Terminal 2: Test Publisher (generates video + messages)
 
-  source /opt/ros/humble/setup.bash
-  python3 /home/mark/workspaces/x1_teleop/client/test_publisher.py
+  python3 /client/test_publisher.py
 
   Terminal 3: Web Client Server
 
@@ -35,16 +32,12 @@ Running the WebRTC Bridge Demo
 
   Rebuild after code changes
 
-  source /opt/ros/humble/setup.bash
-  cd /home/mark/workspaces/x1_teleop
   MAKEFLAGS="-j1" colcon build --symlink-install
 
 --- Using the Launch File -------------------
 
   Basic usage (just the WebRTC bridge):
 
-  source /opt/ros/humble/setup.bash
-  source /home/mark/workspaces/x1_teleop/install/setup.bash
   ros2 launch webrtc_bridge webrtc_bridge.launch.py
 
   Full demo (bridge + test publisher + web server):
@@ -87,13 +80,11 @@ if build jams on:
 
 try:
 
- rm -rf /x1_teleop/build /x1_teleop/install /x1_teleop/log && source /opt/ros/humble/setup.bash && MAKEFLAGS="-j1" colcon build
+ > rm -rf /x1_teleop/build /x1_teleop/install /x1_teleop/log && source /opt/ros/humble/setup.bash && MAKEFLAGS="-j1" colcon build
 
   The key parts:
   - rm -rf build install log - Clean previous build (needed due to cached libdatachannel issues)
   - MAKEFLAGS="-j1" - Single-threaded build to avoid GCC internal compiler error
   - colcon build - Standard ROS2 build
 
-  For incremental builds (if no CMake cache issues):
-  source /opt/ros/humble/setup.bash
-  MAKEFLAGS="-j1" colcon build
+  > MAKEFLAGS="-j1" colcon build

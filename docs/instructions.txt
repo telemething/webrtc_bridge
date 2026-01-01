@@ -1,0 +1,99 @@
+Running the WebRTC Bridge Demo
+
+  --- without launch file -------------------
+
+  Open 3 terminals on the server machine:
+
+  Terminal 1: WebRTC Bridge Node
+
+  source /opt/ros/humble/setup.bash
+  source /home/mark/workspaces/x1_teleop/install/setup.bash
+  ros2 run webrtc_bridge webrtc_bridge_node
+
+  Terminal 2: Test Publisher (generates video + messages)
+
+  source /opt/ros/humble/setup.bash
+  python3 /home/mark/workspaces/x1_teleop/client/test_publisher.py
+
+  Terminal 3: Web Client Server
+
+  python3 /home/mark/workspaces/x1_teleop/client/serve.py
+
+  Browser
+
+  - Local: http://localhost:8000
+  - Network: http://<yada>:8000
+
+  Click Connect to start streaming.
+
+  ---
+  Stop all services
+
+  pkill -f webrtc_bridge_node
+  pkill -f test_publisher.py
+  pkill -f serve.py
+
+  Rebuild after code changes
+
+  source /opt/ros/humble/setup.bash
+  cd /home/mark/workspaces/x1_teleop
+  MAKEFLAGS="-j1" colcon build --symlink-install
+
+--- Using the Launch File -------------------
+
+  Basic usage (just the WebRTC bridge):
+
+  source /opt/ros/humble/setup.bash
+  source /home/mark/workspaces/x1_teleop/install/setup.bash
+  ros2 launch webrtc_bridge webrtc_bridge.launch.py
+
+  Full demo (bridge + test publisher + web server):
+
+  ros2 launch webrtc_bridge webrtc_bridge.launch.py test_publisher:=true web_server:=true
+
+  With custom parameters:
+
+  ros2 launch webrtc_bridge webrtc_bridge.launch.py \
+    signaling_port:=8080 \
+    video_topic:=/camera/image_raw \
+    video_width:=1280 \
+    video_height:=720 \
+    test_publisher:=true \
+    web_server:=true \
+    web_server_port:=8000
+
+  Available launch arguments:
+
+  | Argument         | Default            | Description                |
+  |------------------|--------------------|----------------------------|
+  | signaling_port   | 8080               | WebSocket port             |
+  | video_topic      | /camera/image_raw  | Image topic to stream      |
+  | string_topic_out | /webrtc/string_out | ROS2 → WebRTC topic        |
+  | string_topic_in  | /webrtc/string_in  | WebRTC → ROS2 topic        |
+  | video_width      | 640                | Video width                |
+  | video_height     | 480                | Video height               |
+  | video_fps        | 30                 | Frames per second          |
+  | test_publisher   | false              | Run test data generator    |
+  | web_server       | true               | Run HTTP server for client |
+  | web_server_port  | 8000               | HTTP server port           |
+
+
+----------------------------------------------
+
+if build jams on:
+
+  CMake Error at /x1_teleop/build/webrtc_bridge/_deps/libdatachannel-src/deps/libsrtp/CMakeLists.txt:255 (set_target_properties):
+    set_target_properties called with incorrect number of arguments.
+
+try:
+
+ rm -rf /x1_teleop/build /x1_teleop/install /x1_teleop/log && source /opt/ros/humble/setup.bash && MAKEFLAGS="-j1" colcon build
+
+  The key parts:
+  - rm -rf build install log - Clean previous build (needed due to cached libdatachannel issues)
+  - MAKEFLAGS="-j1" - Single-threaded build to avoid GCC internal compiler error
+  - colcon build - Standard ROS2 build
+
+  For incremental builds (if no CMake cache issues):
+  source /opt/ros/humble/setup.bash
+  MAKEFLAGS="-j1" colcon build

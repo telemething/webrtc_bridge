@@ -201,6 +201,40 @@ void SignalingServer::create_data_channels(PeerContext& context)
   });
 
   context.data_channels.push_back(dc_steering);
+
+  // Throttle data channel for receiving int16 throttle values
+  auto dc_throttle = context.peer_connection->createDataChannel("throttle");
+  dc_throttle->onOpen([label = dc_throttle->label()]() {
+    std::cout << "[SignalingServer] Data channel opened: " << label << std::endl;
+  });
+
+  dc_throttle->onMessage([this, peer_id = context.id](rtc::message_variant data) {
+    if (std::holds_alternative<rtc::binary>(data)) {
+      const auto& binary = std::get<rtc::binary>(data);
+      if (on_binary_message_ && binary.size() >= 2) {
+        on_binary_message_(peer_id, "throttle", binary.data(), binary.size());
+      }
+    }
+  });
+
+  context.data_channels.push_back(dc_throttle);
+
+  // Brake data channel for receiving int16 brake values
+  auto dc_brake = context.peer_connection->createDataChannel("brake");
+  dc_brake->onOpen([label = dc_brake->label()]() {
+    std::cout << "[SignalingServer] Data channel opened: " << label << std::endl;
+  });
+
+  dc_brake->onMessage([this, peer_id = context.id](rtc::message_variant data) {
+    if (std::holds_alternative<rtc::binary>(data)) {
+      const auto& binary = std::get<rtc::binary>(data);
+      if (on_binary_message_ && binary.size() >= 2) {
+        on_binary_message_(peer_id, "brake", binary.data(), binary.size());
+      }
+    }
+  });
+
+  context.data_channels.push_back(dc_brake);
 }
 
 void SignalingServer::create_video_track(PeerContext& context)

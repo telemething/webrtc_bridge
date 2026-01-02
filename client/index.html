@@ -248,6 +248,82 @@
     .steering-value.right {
       color: #44ff44;
     }
+    .video-controls-row {
+      display: flex;
+      gap: 15px;
+      align-items: stretch;
+    }
+    .video-wrapper {
+      flex: 1;
+    }
+    .throttle-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: space-between;
+      padding: 5px;
+      min-width: 60px;
+    }
+    .throttle-label {
+      font-size: 11px;
+      color: #888;
+      text-align: center;
+    }
+    .throttle-label.top {
+      color: #44ff44;
+    }
+    .throttle-label.bottom {
+      color: #ff4444;
+    }
+    .vertical-slider-wrapper {
+      width: 50px;
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      position: relative;
+    }
+    .vertical-slider {
+      height: 30px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: linear-gradient(to right, #ff4444 0%, #444 50%, #44ff44 100%);
+      border-radius: 10px;
+      outline: none;
+      cursor: pointer;
+      transform: rotate(-90deg);
+      position: absolute;
+    }
+    .vertical-slider::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 35px;
+      height: 35px;
+      background: #00d9ff;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .vertical-slider::-moz-range-thumb {
+      width: 35px;
+      height: 35px;
+      background: #00d9ff;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .throttle-value {
+      font-size: 16px;
+      font-weight: bold;
+      color: #00d9ff;
+    }
+    .throttle-value.throttle {
+      color: #44ff44;
+    }
+    .throttle-value.brake {
+      color: #ff4444;
+    }
   </style>
 </head>
 <body>
@@ -280,12 +356,25 @@
     <div class="grid">
       <div class="panel">
         <h2>Video Stream</h2>
-        <div class="video-container">
-          <video id="remoteVideo" autoplay playsinline muted></video>
-          <img id="videoCanvas" alt="Video Stream">
-        </div>
-        <div style="margin-top: 10px; font-size: 12px; color: #888;">
-          FPS: <span id="fpsCounter">0</span> | Frames: <span id="frameCounter">0</span>
+        <div class="video-controls-row">
+          <div class="video-wrapper">
+            <div class="video-container">
+              <video id="remoteVideo" autoplay playsinline muted></video>
+              <img id="videoCanvas" alt="Video Stream">
+            </div>
+            <div style="margin-top: 10px; font-size: 12px; color: #888;">
+              FPS: <span id="fpsCounter">0</span> | Frames: <span id="frameCounter">0</span>
+            </div>
+          </div>
+          <div class="throttle-container">
+            <div class="throttle-label top">THROTTLE<br>(256)</div>
+            <div class="vertical-slider-wrapper">
+              <input type="range" class="vertical-slider" id="throttleSlider" min="-256" max="256" value="0"
+                     oninput="updateThrottle(this.value); sendThrottle(this.value);">
+            </div>
+            <div class="throttle-value" id="throttleValue">0</div>
+            <div class="throttle-label bottom">BRAKE<br>(-256)</div>
+          </div>
         </div>
         <div class="slider-container" style="margin-top: 15px;">
           <div class="slider-labels">
@@ -322,6 +411,8 @@
     let dataChannelIn = null;
     let dataChannelVideo = null;
     let dataChannelSteering = null;
+    let dataChannelThrottle = null;
+    let dataChannelBrake = null;
     let frameCount = 0;
     let lastFpsTime = Date.now();
     let fpsFrameCount = 0;
@@ -344,11 +435,45 @@
 
     const steeringController = new SteeringController();
 
+    // Throttle/Brake control with hysteresis
+    class ThrottleController {
+      constructor() {
+        this.hysteresis = 10;
+        this.lastSentThrottle = 0;
+        this.lastSentBrake = 0;
+      }
+
+      shouldSend(throttle, brake) {
+        return Math.abs(throttle - this.lastSentThrottle) >= this.hysteresis ||
+               Math.abs(brake - this.lastSentBrake) >= this.hysteresis;
+      }
+
+      updateLastSent(throttle, brake) {
+        this.lastSentThrottle = throttle;
+        this.lastSentBrake = brake;
+      }
+    }
+
+    const throttleController = new ThrottleController();
+
     // Auto-detect WebSocket URL based on current hostname
     document.addEventListener('DOMContentLoaded', () => {
       const wsHost = window.location.hostname || 'localhost';
       document.getElementById('wsUrl').value = `ws://${wsHost}:8080`;
+      resizeThrottleSlider();
     });
+
+    // Resize throttle slider to match video height
+    function resizeThrottleSlider() {
+      const videoContainer = document.querySelector('.video-container');
+      const slider = document.getElementById('throttleSlider');
+      if (videoContainer && slider) {
+        const height = videoContainer.offsetHeight;
+        slider.style.width = height + 'px';
+      }
+    }
+
+    window.addEventListener('resize', resizeThrottleSlider);
 
     function log(message, type = '') {
       const logEl = document.getElementById('log');
@@ -481,6 +606,14 @@
           dc.binaryType = 'arraybuffer';
           dataChannelSteering = dc;
           log('Steering channel ready', 'success');
+        } else if (dc.label === 'throttle') {
+          dc.binaryType = 'arraybuffer';
+          dataChannelThrottle = dc;
+          log('Throttle channel ready', 'success');
+        } else if (dc.label === 'brake') {
+          dc.binaryType = 'arraybuffer';
+          dataChannelBrake = dc;
+          log('Brake channel ready', 'success');
         } else {
           dc.onmessage = (event) => {
             addMessage(`[${dc.label}] ${event.data}`, 'incoming');
@@ -601,6 +734,70 @@
         dataChannelSteering.send(buffer);
         steeringController.updateLastSent(intValue);
       }
+    }
+
+    function updateThrottle(value) {
+      const valueEl = document.getElementById('throttleValue');
+      const slider = document.getElementById('throttleSlider');
+      let intValue = parseInt(value);
+
+      // Snap to 0 when near center
+      if (intValue > -5 && intValue < 5) {
+        intValue = 0;
+        slider.value = 0;
+      }
+
+      // Display throttle or brake value
+      valueEl.classList.remove('throttle', 'brake');
+      if (intValue > 0) {
+        valueEl.textContent = 'T:' + intValue;
+        valueEl.classList.add('throttle');
+      } else if (intValue < 0) {
+        valueEl.textContent = 'B:' + (-intValue);
+        valueEl.classList.add('brake');
+      } else {
+        valueEl.textContent = '0';
+      }
+    }
+
+    function sendThrottle(value) {
+      let intValue = parseInt(value);
+
+      // Snap to 0 when near center
+      if (intValue > -5 && intValue < 5) {
+        intValue = 0;
+      }
+
+      // Calculate throttle and brake values
+      let throttle = 0;
+      let brake = 0;
+      if (intValue > 0) {
+        throttle = intValue;
+      } else if (intValue < 0) {
+        brake = -intValue;  // Invert to positive
+      }
+
+      if (!throttleController.shouldSend(throttle, brake)) {
+        return;
+      }
+
+      // Send throttle
+      if (dataChannelThrottle && dataChannelThrottle.readyState === 'open') {
+        const buffer = new ArrayBuffer(2);
+        const view = new DataView(buffer);
+        view.setInt16(0, throttle, true);
+        dataChannelThrottle.send(buffer);
+      }
+
+      // Send brake
+      if (dataChannelBrake && dataChannelBrake.readyState === 'open') {
+        const buffer = new ArrayBuffer(2);
+        const view = new DataView(buffer);
+        view.setInt16(0, brake, true);
+        dataChannelBrake.send(buffer);
+      }
+
+      throttleController.updateLastSent(throttle, brake);
     }
   </script>
 </body>

@@ -41,6 +41,18 @@ def generate_launch_description():
         description='ROS2 Int16 topic for steering values from WebRTC clients'
     )
 
+    throttle_topic_arg = DeclareLaunchArgument(
+        'throttle_topic',
+        default_value='/throttle',
+        description='ROS2 Int16 topic for throttle values from WebRTC clients'
+    )
+
+    brake_topic_arg = DeclareLaunchArgument(
+        'brake_topic',
+        default_value='/brake',
+        description='ROS2 Int16 topic for brake values from WebRTC clients'
+    )
+
     video_width_arg = DeclareLaunchArgument(
         'video_width',
         default_value='640',
@@ -95,6 +107,8 @@ def generate_launch_description():
             'string_topic_out': LaunchConfiguration('string_topic_out'),
             'string_topic_in': LaunchConfiguration('string_topic_in'),
             'steering_topic': LaunchConfiguration('steering_topic'),
+            'throttle_topic': LaunchConfiguration('throttle_topic'),
+            'brake_topic': LaunchConfiguration('brake_topic'),
             'video_width': LaunchConfiguration('video_width'),
             'video_height': LaunchConfiguration('video_height'),
             'video_fps': LaunchConfiguration('video_fps'),
@@ -127,6 +141,8 @@ def generate_launch_description():
         string_topic_out_arg,
         string_topic_in_arg,
         steering_topic_arg,
+        throttle_topic_arg,
+        brake_topic_arg,
         video_width_arg,
         video_height_arg,
         video_fps_arg,

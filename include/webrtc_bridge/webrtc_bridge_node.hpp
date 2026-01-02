@@ -106,6 +106,8 @@ private:
   std::string string_topic_out_;
   std::string string_topic_in_;
   std::string steering_topic_;
+  std::string throttle_topic_;
+  std::string brake_topic_;
   int video_width_;
   int video_height_;
   int video_fps_;
@@ -119,6 +121,8 @@ private:
   // ROS2 interfaces
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
   rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr steering_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr throttle_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr brake_publisher_;
 };
 
 }  // namespace webrtc_bridge

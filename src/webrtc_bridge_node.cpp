@@ -38,6 +38,8 @@ void WebRTCBridgeNode::declare_parameters()
   string_topic_out_ = declare_parameter("string_topic_out", "/webrtc/string_out");
   string_topic_in_ = declare_parameter("string_topic_in", "/webrtc/string_in");
   steering_topic_ = declare_parameter("steering_topic", "/steering");
+  throttle_topic_ = declare_parameter("throttle_topic", "/throttle");
+  brake_topic_ = declare_parameter("brake_topic", "/brake");
   video_width_ = declare_parameter("video_width", 640);
   video_height_ = declare_parameter("video_height", 480);
   video_fps_ = declare_parameter("video_fps", 30);
@@ -49,6 +51,8 @@ void WebRTCBridgeNode::declare_parameters()
   RCLCPP_INFO(get_logger(), "  string_topic_out: %s", string_topic_out_.c_str());
   RCLCPP_INFO(get_logger(), "  string_topic_in: %s", string_topic_in_.c_str());
   RCLCPP_INFO(get_logger(), "  steering_topic: %s", steering_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "  throttle_topic: %s", throttle_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "  brake_topic: %s", brake_topic_.c_str());
   RCLCPP_INFO(get_logger(), "  video: %dx%d @ %d fps, %d kbps",
               video_width_, video_height_, video_fps_, video_bitrate_);
 }
@@ -117,9 +121,13 @@ void WebRTCBridgeNode::initialize_components()
   );
 
   steering_publisher_ = create_publisher<std_msgs::msg::Int16>(steering_topic_, 10);
+  throttle_publisher_ = create_publisher<std_msgs::msg::Int16>(throttle_topic_, 10);
+  brake_publisher_ = create_publisher<std_msgs::msg::Int16>(brake_topic_, 10);
 
   RCLCPP_INFO(get_logger(), "Subscribed to image topic: %s", video_topic_.c_str());
   RCLCPP_INFO(get_logger(), "Publishing steering to: %s", steering_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "Publishing throttle to: %s", throttle_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "Publishing brake to: %s", brake_topic_.c_str());
 }
 
 void WebRTCBridgeNode::image_callback(const sensor_msgs::msg::Image::SharedPtr msg)
@@ -163,18 +171,28 @@ void WebRTCBridgeNode::on_binary_message(const std::string& peer_id,
                                           const std::string& channel_label,
                                           const std::byte* data, size_t size)
 {
-  if (channel_label == "steering" && size >= 2) {
-    // Interpret as little-endian int16
-    int16_t steering_value = static_cast<int16_t>(
-      static_cast<uint8_t>(data[0]) |
-      (static_cast<uint8_t>(data[1]) << 8)
-    );
+  if (size < 2) {
+    return;
+  }
 
-    auto msg = std_msgs::msg::Int16();
-    msg.data = steering_value;
+  // Interpret as little-endian int16
+  int16_t value = static_cast<int16_t>(
+    static_cast<uint8_t>(data[0]) |
+    (static_cast<uint8_t>(data[1]) << 8)
+  );
+
+  auto msg = std_msgs::msg::Int16();
+  msg.data = value;
+
+  if (channel_label == "steering") {
     steering_publisher_->publish(msg);
-
-    RCLCPP_DEBUG(get_logger(), "Steering from %s: %d", peer_id.c_str(), steering_value);
+    RCLCPP_DEBUG(get_logger(), "Steering from %s: %d", peer_id.c_str(), value);
+  } else if (channel_label == "throttle") {
+    throttle_publisher_->publish(msg);
+    RCLCPP_DEBUG(get_logger(), "Throttle from %s: %d", peer_id.c_str(), value);
+  } else if (channel_label == "brake") {
+    brake_publisher_->publish(msg);
+    RCLCPP_DEBUG(get_logger(), "Brake from %s: %d", peer_id.c_str(), value);
   }
 }
 

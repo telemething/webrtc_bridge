@@ -44,6 +44,9 @@ public:
   using OnDataChannelMessageCallback = std::function<void(const std::string& peer_id,
                                                           const std::string& channel_label,
                                                           const std::string& message)>;
+  using OnBinaryMessageCallback = std::function<void(const std::string& peer_id,
+                                                     const std::string& channel_label,
+                                                     const std::byte* data, size_t size)>;
 
   /**
    * @brief Construct a signaling server bound to a TCP port.
@@ -83,6 +86,12 @@ public:
    * @param callback Function receiving peer id, channel label, and payload.
    */
   void set_on_data_channel_message(OnDataChannelMessageCallback callback);
+
+  /**
+   * @brief Register a callback invoked when binary data channel messages arrive.
+   * @param callback Function receiving peer id, channel label, data pointer, and size.
+   */
+  void set_on_binary_message(OnBinaryMessageCallback callback);
 
   /**
    * @brief Send a UTF-8 message to a specific peer's data channel.
@@ -157,6 +166,7 @@ private:
   OnPeerConnectedCallback on_peer_connected_;
   OnPeerDisconnectedCallback on_peer_disconnected_;
   OnDataChannelMessageCallback on_data_channel_message_;
+  OnBinaryMessageCallback on_binary_message_;
 
   rtc::Configuration rtc_config_;
   uint64_t peer_counter_ = 0;

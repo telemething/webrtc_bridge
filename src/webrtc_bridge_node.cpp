@@ -37,6 +37,7 @@ void WebRTCBridgeNode::declare_parameters()
   video_topic_ = declare_parameter("video_topic", "/camera/image_raw");
   string_topic_out_ = declare_parameter("string_topic_out", "/webrtc/string_out");
   string_topic_in_ = declare_parameter("string_topic_in", "/webrtc/string_in");
+  steering_topic_ = declare_parameter("steering_topic", "/steering");
   video_width_ = declare_parameter("video_width", 640);
   video_height_ = declare_parameter("video_height", 480);
   video_fps_ = declare_parameter("video_fps", 30);
@@ -47,6 +48,7 @@ void WebRTCBridgeNode::declare_parameters()
   RCLCPP_INFO(get_logger(), "  video_topic: %s", video_topic_.c_str());
   RCLCPP_INFO(get_logger(), "  string_topic_out: %s", string_topic_out_.c_str());
   RCLCPP_INFO(get_logger(), "  string_topic_in: %s", string_topic_in_.c_str());
+  RCLCPP_INFO(get_logger(), "  steering_topic: %s", steering_topic_.c_str());
   RCLCPP_INFO(get_logger(), "  video: %dx%d @ %d fps, %d kbps",
               video_width_, video_height_, video_fps_, video_bitrate_);
 }
@@ -71,6 +73,13 @@ void WebRTCBridgeNode::initialize_components()
     [this](const std::string& peer_id, const std::string& channel_label,
            const std::string& message) {
       on_data_channel_message(peer_id, channel_label, message);
+    }
+  );
+
+  signaling_server_->set_on_binary_message(
+    [this](const std::string& peer_id, const std::string& channel_label,
+           const std::byte* data, size_t size) {
+      on_binary_message(peer_id, channel_label, data, size);
     }
   );
 
@@ -107,7 +116,10 @@ void WebRTCBridgeNode::initialize_components()
     std::bind(&WebRTCBridgeNode::image_callback, this, std::placeholders::_1)
   );
 
+  steering_publisher_ = create_publisher<std_msgs::msg::Int16>(steering_topic_, 10);
+
   RCLCPP_INFO(get_logger(), "Subscribed to image topic: %s", video_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "Publishing steering to: %s", steering_topic_.c_str());
 }
 
 void WebRTCBridgeNode::image_callback(const sensor_msgs::msg::Image::SharedPtr msg)
@@ -145,6 +157,25 @@ void WebRTCBridgeNode::on_data_channel_message(const std::string& peer_id,
                peer_id.c_str(), channel_label.c_str(), message.c_str());
 
   data_channel_handler_->on_webrtc_message(channel_label, message);
+}
+
+void WebRTCBridgeNode::on_binary_message(const std::string& peer_id,
+                                          const std::string& channel_label,
+                                          const std::byte* data, size_t size)
+{
+  if (channel_label == "steering" && size >= 2) {
+    // Interpret as little-endian int16
+    int16_t steering_value = static_cast<int16_t>(
+      static_cast<uint8_t>(data[0]) |
+      (static_cast<uint8_t>(data[1]) << 8)
+    );
+
+    auto msg = std_msgs::msg::Int16();
+    msg.data = steering_value;
+    steering_publisher_->publish(msg);
+
+    RCLCPP_DEBUG(get_logger(), "Steering from %s: %d", peer_id.c_str(), steering_value);
+  }
 }
 
 void WebRTCBridgeNode::on_encoded_frame(const uint8_t* data, size_t size,

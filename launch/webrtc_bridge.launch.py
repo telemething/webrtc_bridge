@@ -35,6 +35,12 @@ def generate_launch_description():
         description='ROS2 string topic for messages from WebRTC clients'
     )
 
+    steering_topic_arg = DeclareLaunchArgument(
+        'steering_topic',
+        default_value='/steering',
+        description='ROS2 Int16 topic for steering values from WebRTC clients'
+    )
+
     video_width_arg = DeclareLaunchArgument(
         'video_width',
         default_value='640',
@@ -88,6 +94,7 @@ def generate_launch_description():
             'video_topic': LaunchConfiguration('video_topic'),
             'string_topic_out': LaunchConfiguration('string_topic_out'),
             'string_topic_in': LaunchConfiguration('string_topic_in'),
+            'steering_topic': LaunchConfiguration('steering_topic'),
             'video_width': LaunchConfiguration('video_width'),
             'video_height': LaunchConfiguration('video_height'),
             'video_fps': LaunchConfiguration('video_fps'),
@@ -119,6 +126,7 @@ def generate_launch_description():
         video_topic_arg,
         string_topic_out_arg,
         string_topic_in_arg,
+        steering_topic_arg,
         video_width_arg,
         video_height_arg,
         video_fps_arg,

@@ -193,6 +193,61 @@
     .log-entry.info {
       color: #00d9ff;
     }
+    .slider-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 15px 0;
+    }
+    .slider-labels {
+      display: flex;
+      justify-content: space-between;
+      width: 100%;
+      margin-bottom: 10px;
+      font-size: 12px;
+      color: #888;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 20px;
+      -webkit-appearance: none;
+      appearance: none;
+      background: linear-gradient(to right, #ff4444 0%, #444 50%, #44ff44 100%);
+      border-radius: 10px;
+      outline: none;
+      cursor: pointer;
+    }
+    input[type="range"]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 30px;
+      height: 30px;
+      background: #00d9ff;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    input[type="range"]::-moz-range-thumb {
+      width: 30px;
+      height: 30px;
+      background: #00d9ff;
+      border-radius: 50%;
+      cursor: pointer;
+      border: none;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+    }
+    .steering-value {
+      font-size: 24px;
+      font-weight: bold;
+      color: #00d9ff;
+      margin-top: 10px;
+    }
+    .steering-value.left {
+      color: #ff4444;
+    }
+    .steering-value.right {
+      color: #44ff44;
+    }
   </style>
 </head>
 <body>
@@ -232,6 +287,16 @@
         <div style="margin-top: 10px; font-size: 12px; color: #888;">
           FPS: <span id="fpsCounter">0</span> | Frames: <span id="frameCounter">0</span>
         </div>
+        <div class="slider-container" style="margin-top: 15px;">
+          <div class="slider-labels">
+            <span>LEFT (-255)</span>
+            <span>CENTER (0)</span>
+            <span>RIGHT (255)</span>
+          </div>
+          <input type="range" id="steeringSlider" min="-255" max="255" value="0"
+                 oninput="updateSteering(this.value); sendSteering(this.value);">
+          <div class="steering-value" id="steeringValue">0</div>
+        </div>
       </div>
 
       <div class="panel">
@@ -256,9 +321,28 @@
     let dataChannelOut = null;
     let dataChannelIn = null;
     let dataChannelVideo = null;
+    let dataChannelSteering = null;
     let frameCount = 0;
     let lastFpsTime = Date.now();
     let fpsFrameCount = 0;
+
+    // Steering control with hysteresis
+    class SteeringController {
+      constructor() {
+        this.hysteresis = 10;
+        this.lastSentValue = 0;
+      }
+
+      shouldSend(value) {
+        return Math.abs(value - this.lastSentValue) >= this.hysteresis;
+      }
+
+      updateLastSent(value) {
+        this.lastSentValue = value;
+      }
+    }
+
+    const steeringController = new SteeringController();
 
     // Auto-detect WebSocket URL based on current hostname
     document.addEventListener('DOMContentLoaded', () => {
@@ -393,6 +477,10 @@
             displayVideoFrame(event.data);
           };
           dataChannelVideo = dc;
+        } else if (dc.label === 'steering') {
+          dc.binaryType = 'arraybuffer';
+          dataChannelSteering = dc;
+          log('Steering channel ready', 'success');
         } else {
           dc.onmessage = (event) => {
             addMessage(`[${dc.label}] ${event.data}`, 'incoming');
@@ -469,6 +557,49 @@
         document.getElementById('fpsCounter').textContent = fpsFrameCount;
         fpsFrameCount = 0;
         lastFpsTime = now;
+      }
+    }
+
+    function updateSteering(value) {
+      const valueEl = document.getElementById('steeringValue');
+      const slider = document.getElementById('steeringSlider');
+      let intValue = parseInt(value);
+
+      // Snap to 0 when near center
+      if (intValue > -5 && intValue < 5) {
+        intValue = 0;
+        slider.value = 0;
+      }
+
+      valueEl.textContent = intValue;
+
+      // Update color based on direction
+      valueEl.classList.remove('left', 'right');
+      if (intValue < -50) {
+        valueEl.classList.add('left');
+      } else if (intValue > 50) {
+        valueEl.classList.add('right');
+      }
+    }
+
+    function sendSteering(value) {
+      let intValue = parseInt(value);
+
+      // Snap to 0 when near center
+      if (intValue > -5 && intValue < 5) {
+        intValue = 0;
+      }
+
+      if (!steeringController.shouldSend(intValue)) {
+        return;
+      }
+      if (dataChannelSteering && dataChannelSteering.readyState === 'open') {
+        // Send as Int16 binary (2 bytes, little-endian)
+        const buffer = new ArrayBuffer(2);
+        const view = new DataView(buffer);
+        view.setInt16(0, intValue, true); // true = little-endian
+        dataChannelSteering.send(buffer);
+        steeringController.updateLastSent(intValue);
       }
     }
   </script>

@@ -9,6 +9,7 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <std_msgs/msg/int16.hpp>
 #include <cv_bridge/cv_bridge.h>
 
 #include "webrtc_bridge/signaling_server.hpp"
@@ -79,6 +80,17 @@ private:
                                const std::string& message);
 
   /**
+   * @brief Handle binary data channel messages (e.g., steering input).
+   * @param peer_id Sender peer identifier.
+   * @param channel_label Data channel label.
+   * @param data Pointer to binary data.
+   * @param size Size of the binary data.
+   */
+  void on_binary_message(const std::string& peer_id,
+                         const std::string& channel_label,
+                         const std::byte* data, size_t size);
+
+  /**
    * @brief Relay encoded frames to all connected peers via the signaling server.
    * @param data Encoded frame bytes (JPEG).
    * @param size Size of the encoded buffer.
@@ -93,6 +105,7 @@ private:
   std::string video_topic_;
   std::string string_topic_out_;
   std::string string_topic_in_;
+  std::string steering_topic_;
   int video_width_;
   int video_height_;
   int video_fps_;
@@ -105,6 +118,7 @@ private:
 
   // ROS2 interfaces
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
+  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr steering_publisher_;
 };
 
 }  // namespace webrtc_bridge

@@ -184,6 +184,23 @@ void SignalingServer::create_data_channels(PeerContext& context)
     std::cout << "[SignalingServer] Data channel opened: " << label << std::endl;
   });
   context.data_channels.push_back(dc_video);
+
+  // Steering data channel for receiving int16 steering values
+  auto dc_steering = context.peer_connection->createDataChannel("steering");
+  dc_steering->onOpen([label = dc_steering->label()]() {
+    std::cout << "[SignalingServer] Data channel opened: " << label << std::endl;
+  });
+
+  dc_steering->onMessage([this, peer_id = context.id](rtc::message_variant data) {
+    if (std::holds_alternative<rtc::binary>(data)) {
+      const auto& binary = std::get<rtc::binary>(data);
+      if (on_binary_message_ && binary.size() >= 2) {
+        on_binary_message_(peer_id, "steering", binary.data(), binary.size());
+      }
+    }
+  });
+
+  context.data_channels.push_back(dc_steering);
 }
 
 void SignalingServer::create_video_track(PeerContext& context)
@@ -261,6 +278,11 @@ void SignalingServer::set_on_peer_disconnected(OnPeerDisconnectedCallback callba
 void SignalingServer::set_on_data_channel_message(OnDataChannelMessageCallback callback)
 {
   on_data_channel_message_ = std::move(callback);
+}
+
+void SignalingServer::set_on_binary_message(OnBinaryMessageCallback callback)
+{
+  on_binary_message_ = std::move(callback);
 }
 
 void SignalingServer::send_to_peer(const std::string& peer_id, const std::string& channel_label,

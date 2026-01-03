@@ -1,10 +1,10 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebRTC Bridge Test Client</title>
-  <style>
+<!DOCTYPE html> 
+<html lang="en"> 
+    <head> 
+        <meta charset="UTF-8"> 
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"> 
+        <title>WebRTC Bridge Test Client</title>         
+        <style>
     * {
       box-sizing: border-box;
       margin: 0;
@@ -324,87 +324,263 @@
     .throttle-value.brake {
       color: #ff4444;
     }
-  </style>
-</head>
-<body>
-  <div class="container">
-    <h1>WebRTC Bridge Test Client</h1>
-
-    <div class="status-bar">
-      <div class="status-indicator">
-        <div class="status-dot" id="wsStatus"></div>
-        <span>WebSocket</span>
-      </div>
-      <div class="status-indicator">
-        <div class="status-dot" id="rtcStatus"></div>
-        <span>WebRTC</span>
-      </div>
-      <div class="status-indicator">
-        <div class="status-dot" id="dcStatus"></div>
-        <span>DataChannel</span>
-      </div>
-    </div>
-
-    <div class="controls" style="margin-bottom: 20px;">
-      <div class="control-row">
-        <input type="text" id="wsUrl" placeholder="WebSocket URL">
-        <button class="btn-primary" id="connectBtn" onclick="connect()">Connect</button>
-        <button class="btn-danger" id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
-      </div>
-    </div>
-
-    <div class="grid">
-      <div class="panel">
-        <h2>Video Stream</h2>
-        <div class="video-controls-row">
-          <div class="video-wrapper">
-            <div class="video-container">
-              <video id="remoteVideo" autoplay playsinline muted></video>
-              <img id="videoCanvas" alt="Video Stream">
+    .gear-control {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 10px;
+      min-width: 50px;
+    }
+    .gear-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .gear-options {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .gear-option {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .gear-option input[type="radio"] {
+      display: none;
+    }
+    .gear-option label {
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      border: 2px solid #0f3460;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 16px;
+      transition: all 0.2s;
+    }
+    .gear-option input[type="radio"]:checked + label {
+      background: #00d9ff;
+      color: #1a1a2e;
+      border-color: #00d9ff;
+    }
+    .gear-option label:hover {
+      border-color: #00d9ff;
+    }
+    .mode-label {
+      font-size: 11px;
+      color: #888;
+      margin-top: 12px;
+      margin-bottom: 8px;
+    }
+    .mode-options {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+    .mode-option {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .mode-option input[type="radio"] {
+      display: none;
+    }
+    .mode-option label {
+      width: 50px;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #1a1a2e;
+      border: 2px solid #0f3460;
+      border-radius: 4px;
+      cursor: pointer;
+      font-weight: bold;
+      font-size: 10px;
+      transition: all 0.2s;
+    }
+    .mode-option input[type="radio"]:checked + label {
+      background: #ff9900;
+      color: #1a1a2e;
+      border-color: #ff9900;
+    }
+    .mode-option label:hover {
+      border-color: #ff9900;
+    }
+    .start-control {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 10px;
+      min-width: 70px;
+    }
+    .start-label {
+      font-size: 11px;
+      color: #888;
+      margin-bottom: 8px;
+    }
+    .start-button {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      border: 3px solid #44ff44;
+      background: #1a1a2e;
+      color: #44ff44;
+      font-weight: bold;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    .start-button:hover {
+      background: #2a2a3e;
+    }
+    .start-button:active, .start-button.pressed {
+      background: #44ff44;
+      color: #1a1a2e;
+      transform: scale(0.95);
+    }
+    .panic-button {
+      width: 100%;
+      padding: 15px;
+      border: none;
+      border-radius: 8px;
+      background: #ff4444;
+      color: #fff;
+      font-weight: bold;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.1s;
+      user-select: none;
+      -webkit-user-select: none;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 10px;
+    }
+    .panic-button:hover {
+      background: #ff6666;
+    }
+    .panic-button:active, .panic-button.pressed {
+      background: #cc0000;
+      transform: scale(0.98);
+    }
+  </style>         
+    </head>     
+    <body> 
+        <div class="container">              
+            <div class="status-bar"> 
+                <div class="status-indicator"> 
+                    <div class="status-dot" id="wsStatus"></div>                     <span>WebSocket</span> 
+                </div>                 
+                <div class="status-indicator"> 
+                    <div class="status-dot" id="rtcStatus"></div>                     <span>WebRTC</span> 
+                </div>                 
+                <div class="status-indicator"> 
+                    <div class="status-dot" id="dcStatus"></div>                     <span>DataChannel</span> 
+                </div>                 
+                <input type="text" id="wsUrl" placeholder="WebSocket URL">
+                <button class="btn-primary" id="connectBtn" onclick="connect()">Connect</button>
+                <button class="btn-danger" id="disconnectBtn" onclick="disconnect()" disabled>Disconnect</button>
             </div>
-            <div style="margin-top: 10px; font-size: 12px; color: #888;">
-              FPS: <span id="fpsCounter">0</span> | Frames: <span id="frameCounter">0</span>
+            <div class="control-row">                                                    
+</div>             
+            <div class="controls" style="margin-bottom: 20px;">                  
+</div>             
+            <div class="grid"> 
+                <div class="panel" style="grid-area:1 / 1 / 2 / 3;">
+                    <button class="panic-button" id="panicButton" onclick="togglePanic()">PANIC STOP</button>
+                    <h2>Video Stream</h2>
+                    <div class="video-controls-row"> 
+                        <div class="throttle-container"> 
+                            <div class="throttle-label top">THROTTLE<br>(256)
+                            </div>                             
+                            <div class="vertical-slider-wrapper"> 
+                                <input type="range" class="vertical-slider" id="throttleSlider" min="-256" max="256" value="0" oninput="updateThrottle(this.value); sendThrottle(this.value);"> 
+                            </div>                             
+                            <div class="throttle-value" id="throttleValue">0</div>                             
+                            <div class="throttle-label bottom">BRAKE<br>(-256)
+                            </div>                             
+                        </div>
+                        <div class="video-wrapper"> 
+                            <div class="video-container"> 
+                                <video id="remoteVideo" autoplay playsinline muted></video>                                 
+                                <img id="videoCanvas" alt="Video Stream"> 
+                            </div>                             
+                            <div style="margin-top: 10px; font-size: 12px; color: #888;"> 
+                                FPS: <span id="fpsCounter">0</span> | Frames: <span id="frameCounter">0</span> 
+                            </div>                             
+                        </div>                                                  
+                        <div class="gear-control"> 
+                            <button class="start-button" id="startButton" onmousedown="sendStart(1)" onmouseup="sendStart(0)" onmouseleave="sendStart(0)" ontouchstart="sendStart(1); event.preventDefault();" ontouchend="sendStart(0)">START</button>
+                            <div class="gear-label">GEAR</div>                             
+                            <div class="gear-options"> 
+                                <div class="gear-option"> 
+                                    <input type="radio" id="gearP" name="gear" value="0" checked onchange="sendGear(0)"> 
+                                    <label for="gearP">P</label>                                     
+                                </div>                                 
+                                <div class="gear-option"> 
+                                    <input type="radio" id="gearR" name="gear" value="1" onchange="sendGear(1)"> 
+                                    <label for="gearR">R</label>                                     
+                                </div>                                 
+                                <div class="gear-option"> 
+                                    <input type="radio" id="gearF" name="gear" value="2" onchange="sendGear(2)"> 
+                                    <label for="gearF">F</label>                                     
+                                </div>                                 
+                                <div class="gear-option"> 
+                                    <input type="radio" id="gearL" name="gear" value="3" onchange="sendGear(3)"> 
+                                    <label for="gearL">L</label>                                     
+                                </div>                                 
+                            </div>
+                            <div class="mode-label">MODE</div>
+                            <div class="mode-options">
+                                <div class="mode-option">
+                                    <input type="radio" id="modeIdle" name="mode" value="0" checked onchange="sendMode(0)">
+                                    <label for="modeIdle">IDLE</label>
+                                </div>
+                                <div class="mode-option">
+                                    <input type="radio" id="modeConfig" name="mode" value="1" onchange="sendMode(1)">
+                                    <label for="modeConfig">CONFIG</label>
+                                </div>
+                                <div class="mode-option">
+                                    <input type="radio" id="modeRun" name="mode" value="2" onchange="sendMode(2)">
+                                    <label for="modeRun">RUN</label>
+                                </div>
+                                <div class="mode-option">
+                                    <input type="radio" id="modeManual" name="mode" value="3" onchange="sendMode(3)">
+                                    <label for="modeManual">MANUAL</label>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="slider-container" style="margin-top: 15px;"> 
+                        <div class="slider-labels"> <span>LEFT (-255)</span> <span>CENTER (0)</span> <span>RIGHT (255)</span> 
+                        </div>                         
+                        <input type="range" id="steeringSlider" min="-255" max="255" value="0" oninput="updateSteering(this.value); sendSteering(this.value);"> 
+                        <div class="steering-value" id="steeringValue">0</div>                         
+                    </div>                     
+                </div>                                                   
+            </div>             
+        </div>         
+        <div class="panel"> 
+            <div class="panel" style="grid-column: 1 / -1;"> 
+                <h2>Connection Log</h2> 
+                <div class="log" id="log"></div>                 
             </div>
-          </div>
-          <div class="throttle-container">
-            <div class="throttle-label top">THROTTLE<br>(256)</div>
-            <div class="vertical-slider-wrapper">
-              <input type="range" class="vertical-slider" id="throttleSlider" min="-256" max="256" value="0"
-                     oninput="updateThrottle(this.value); sendThrottle(this.value);">
-            </div>
-            <div class="throttle-value" id="throttleValue">0</div>
-            <div class="throttle-label bottom">BRAKE<br>(-256)</div>
-          </div>
+            <h2>ROS2 Messages (DataChannel)</h2> 
+            <div class="messages" id="messages"></div>             
+            <div class="control-row"> 
+                <input type="text" id="messageInput" placeholder="Type a message to send to ROS2..." onkeypress="if(event.key==='Enter')sendMessage()"> 
+                <button class="btn-success" onclick="sendMessage()">Send</button>                 
+            </div>             
         </div>
-        <div class="slider-container" style="margin-top: 15px;">
-          <div class="slider-labels">
-            <span>LEFT (-255)</span>
-            <span>CENTER (0)</span>
-            <span>RIGHT (255)</span>
-          </div>
-          <input type="range" id="steeringSlider" min="-255" max="255" value="0"
-                 oninput="updateSteering(this.value); sendSteering(this.value);">
-          <div class="steering-value" id="steeringValue">0</div>
-        </div>
-      </div>
-
-      <div class="panel">
-        <h2>ROS2 Messages (DataChannel)</h2>
-        <div class="messages" id="messages"></div>
-        <div class="control-row">
-          <input type="text" id="messageInput" placeholder="Type a message to send to ROS2..." onkeypress="if(event.key==='Enter')sendMessage()">
-          <button class="btn-success" onclick="sendMessage()">Send</button>
-        </div>
-      </div>
-
-      <div class="panel" style="grid-column: 1 / -1;">
-        <h2>Connection Log</h2>
-        <div class="log" id="log"></div>
-      </div>
-    </div>
-  </div>
-
-  <script>
+        <script>
     let ws = null;
     let pc = null;
     let dataChannelOut = null;
@@ -413,6 +589,10 @@
     let dataChannelSteering = null;
     let dataChannelThrottle = null;
     let dataChannelBrake = null;
+    let dataChannelGear = null;
+    let dataChannelStart = null;
+    let dataChannelPanic = null;
+    let dataChannelMode = null;
     let frameCount = 0;
     let lastFpsTime = Date.now();
     let fpsFrameCount = 0;
@@ -614,6 +794,22 @@
           dc.binaryType = 'arraybuffer';
           dataChannelBrake = dc;
           log('Brake channel ready', 'success');
+        } else if (dc.label === 'gear') {
+          dc.binaryType = 'arraybuffer';
+          dataChannelGear = dc;
+          log('Gear channel ready', 'success');
+        } else if (dc.label === 'start') {
+          dc.binaryType = 'arraybuffer';
+          dataChannelStart = dc;
+          log('Start channel ready', 'success');
+        } else if (dc.label === 'panic') {
+          dc.binaryType = 'arraybuffer';
+          dataChannelPanic = dc;
+          log('Panic channel ready', 'success');
+        } else if (dc.label === 'mode') {
+          dc.binaryType = 'arraybuffer';
+          dataChannelMode = dc;
+          log('Mode channel ready', 'success');
         } else {
           dc.onmessage = (event) => {
             addMessage(`[${dc.label}] ${event.data}`, 'incoming');
@@ -799,6 +995,78 @@
 
       throttleController.updateLastSent(throttle, brake);
     }
-  </script>
-</body>
+
+    function sendGear(value) {
+      if (dataChannelGear && dataChannelGear.readyState === 'open') {
+        // Send as Int16 binary (2 bytes, little-endian)
+        const buffer = new ArrayBuffer(2);
+        const view = new DataView(buffer);
+        view.setInt16(0, value, true); // true = little-endian
+        dataChannelGear.send(buffer);
+        const gearNames = ['P', 'R', 'F', 'L'];
+        log(`Gear set to ${gearNames[value]} (${value})`, 'info');
+      }
+    }
+
+    let lastStartValue = 0;
+    function sendStart(value) {
+      // Prevent duplicate sends
+      if (value === lastStartValue) return;
+      lastStartValue = value;
+
+      const button = document.getElementById('startButton');
+      if (value === 1) {
+        button.classList.add('pressed');
+      } else {
+        button.classList.remove('pressed');
+      }
+
+      if (dataChannelStart && dataChannelStart.readyState === 'open') {
+        // Send as Int16 binary (2 bytes, little-endian)
+        const buffer = new ArrayBuffer(2);
+        const view = new DataView(buffer);
+        view.setInt16(0, value, true); // true = little-endian
+        dataChannelStart.send(buffer);
+        log(`Start: ${value === 1 ? 'ON' : 'OFF'}`, 'info');
+      }
+    }
+
+    let panicState = 0;
+    function togglePanic() {
+      // Toggle panic state
+      panicState = panicState === 0 ? 1 : 0;
+
+      const button = document.getElementById('panicButton');
+      if (panicState === 1) {
+        button.classList.add('pressed');
+        button.textContent = 'PANIC ACTIVE';
+      } else {
+        button.classList.remove('pressed');
+        button.textContent = 'PANIC STOP';
+      }
+
+      if (dataChannelPanic && dataChannelPanic.readyState === 'open') {
+        // Send as Int16 binary (2 bytes, little-endian)
+        const buffer = new ArrayBuffer(2);
+        const view = new DataView(buffer);
+        view.setInt16(0, panicState, true); // true = little-endian
+        dataChannelPanic.send(buffer);
+        log(`PANIC: ${panicState === 1 ? 'ACTIVATED' : 'RELEASED'}`, panicState === 1 ? 'error' : 'info');
+      }
+    }
+
+    function sendMode(value) {
+      if (dataChannelMode && dataChannelMode.readyState === 'open') {
+        // Send as Int16 binary (2 bytes, little-endian)
+        const buffer = new ArrayBuffer(2);
+        const view = new DataView(buffer);
+        view.setInt16(0, value, true); // true = little-endian
+        dataChannelMode.send(buffer);
+        const modeNames = ['IDLE', 'CONFIG', 'RUN', 'MANUAL'];
+        log(`Mode set to ${modeNames[value]} (${value})`, 'info');
+      }
+    }
+  </script>         
+    </body>     
 </html>
+

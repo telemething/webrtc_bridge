@@ -235,6 +235,74 @@ void SignalingServer::create_data_channels(PeerContext& context)
   });
 
   context.data_channels.push_back(dc_brake);
+
+  // Gear data channel for receiving int16 gear values
+  auto dc_gear = context.peer_connection->createDataChannel("gear");
+  dc_gear->onOpen([label = dc_gear->label()]() {
+    std::cout << "[SignalingServer] Data channel opened: " << label << std::endl;
+  });
+
+  dc_gear->onMessage([this, peer_id = context.id](rtc::message_variant data) {
+    if (std::holds_alternative<rtc::binary>(data)) {
+      const auto& binary = std::get<rtc::binary>(data);
+      if (on_binary_message_ && binary.size() >= 2) {
+        on_binary_message_(peer_id, "gear", binary.data(), binary.size());
+      }
+    }
+  });
+
+  context.data_channels.push_back(dc_gear);
+
+  // Start data channel for receiving int16 start button values (momentary switch)
+  auto dc_start = context.peer_connection->createDataChannel("start");
+  dc_start->onOpen([label = dc_start->label()]() {
+    std::cout << "[SignalingServer] Data channel opened: " << label << std::endl;
+  });
+
+  dc_start->onMessage([this, peer_id = context.id](rtc::message_variant data) {
+    if (std::holds_alternative<rtc::binary>(data)) {
+      const auto& binary = std::get<rtc::binary>(data);
+      if (on_binary_message_ && binary.size() >= 2) {
+        on_binary_message_(peer_id, "start", binary.data(), binary.size());
+      }
+    }
+  });
+
+  context.data_channels.push_back(dc_start);
+
+  // Panic data channel for receiving int16 panic button values (momentary switch)
+  auto dc_panic = context.peer_connection->createDataChannel("panic");
+  dc_panic->onOpen([label = dc_panic->label()]() {
+    std::cout << "[SignalingServer] Data channel opened: " << label << std::endl;
+  });
+
+  dc_panic->onMessage([this, peer_id = context.id](rtc::message_variant data) {
+    if (std::holds_alternative<rtc::binary>(data)) {
+      const auto& binary = std::get<rtc::binary>(data);
+      if (on_binary_message_ && binary.size() >= 2) {
+        on_binary_message_(peer_id, "panic", binary.data(), binary.size());
+      }
+    }
+  });
+
+  context.data_channels.push_back(dc_panic);
+
+  // Mode data channel for receiving int16 mode values (0=IDLE, 1=CONFIG, 2=RUN, 3=MANUAL)
+  auto dc_mode = context.peer_connection->createDataChannel("mode");
+  dc_mode->onOpen([label = dc_mode->label()]() {
+    std::cout << "[SignalingServer] Data channel opened: " << label << std::endl;
+  });
+
+  dc_mode->onMessage([this, peer_id = context.id](rtc::message_variant data) {
+    if (std::holds_alternative<rtc::binary>(data)) {
+      const auto& binary = std::get<rtc::binary>(data);
+      if (on_binary_message_ && binary.size() >= 2) {
+        on_binary_message_(peer_id, "mode", binary.data(), binary.size());
+      }
+    }
+  });
+
+  context.data_channels.push_back(dc_mode);
 }
 
 void SignalingServer::create_video_track(PeerContext& context)

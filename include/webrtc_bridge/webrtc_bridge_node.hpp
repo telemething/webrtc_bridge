@@ -108,6 +108,10 @@ private:
   std::string steering_topic_;
   std::string throttle_topic_;
   std::string brake_topic_;
+  std::string gear_topic_;
+  std::string start_topic_;
+  std::string panic_topic_;
+  std::string mode_topic_;
   int video_width_;
   int video_height_;
   int video_fps_;
@@ -123,6 +127,10 @@ private:
   rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr steering_publisher_;
   rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr throttle_publisher_;
   rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr brake_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr gear_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr start_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr panic_publisher_;
+  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr mode_publisher_;
 };
 
 }  // namespace webrtc_bridge

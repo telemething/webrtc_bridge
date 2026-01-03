@@ -37,9 +37,13 @@ void WebRTCBridgeNode::declare_parameters()
   video_topic_ = declare_parameter("video_topic", "/camera/image_raw");
   string_topic_out_ = declare_parameter("string_topic_out", "/webrtc/string_out");
   string_topic_in_ = declare_parameter("string_topic_in", "/webrtc/string_in");
-  steering_topic_ = declare_parameter("steering_topic", "/steering");
-  throttle_topic_ = declare_parameter("throttle_topic", "/throttle");
-  brake_topic_ = declare_parameter("brake_topic", "/brake");
+  steering_topic_ = declare_parameter("steering_topic", "/x1_teleop/from/steering");
+  throttle_topic_ = declare_parameter("throttle_topic", "/x1_teleop/from/throttle");
+  brake_topic_ = declare_parameter("brake_topic", "/x1_teleop/from/brake");
+  gear_topic_ = declare_parameter("gear_topic", "/x1_teleop/from/gear");
+  start_topic_ = declare_parameter("start_topic", "/x1_teleop/from/start");
+  panic_topic_ = declare_parameter("panic_topic", "/x1_teleop/from/panic");
+  mode_topic_ = declare_parameter("mode_topic", "/x1_teleop/from/mode");
   video_width_ = declare_parameter("video_width", 640);
   video_height_ = declare_parameter("video_height", 480);
   video_fps_ = declare_parameter("video_fps", 30);
@@ -53,6 +57,10 @@ void WebRTCBridgeNode::declare_parameters()
   RCLCPP_INFO(get_logger(), "  steering_topic: %s", steering_topic_.c_str());
   RCLCPP_INFO(get_logger(), "  throttle_topic: %s", throttle_topic_.c_str());
   RCLCPP_INFO(get_logger(), "  brake_topic: %s", brake_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "  gear_topic: %s", gear_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "  start_topic: %s", start_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "  panic_topic: %s", panic_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "  mode_topic: %s", mode_topic_.c_str());
   RCLCPP_INFO(get_logger(), "  video: %dx%d @ %d fps, %d kbps",
               video_width_, video_height_, video_fps_, video_bitrate_);
 }
@@ -123,11 +131,19 @@ void WebRTCBridgeNode::initialize_components()
   steering_publisher_ = create_publisher<std_msgs::msg::Int16>(steering_topic_, 10);
   throttle_publisher_ = create_publisher<std_msgs::msg::Int16>(throttle_topic_, 10);
   brake_publisher_ = create_publisher<std_msgs::msg::Int16>(brake_topic_, 10);
+  gear_publisher_ = create_publisher<std_msgs::msg::Int16>(gear_topic_, 10);
+  start_publisher_ = create_publisher<std_msgs::msg::Int16>(start_topic_, 10);
+  panic_publisher_ = create_publisher<std_msgs::msg::Int16>(panic_topic_, 10);
+  mode_publisher_ = create_publisher<std_msgs::msg::Int16>(mode_topic_, 10);
 
   RCLCPP_INFO(get_logger(), "Subscribed to image topic: %s", video_topic_.c_str());
   RCLCPP_INFO(get_logger(), "Publishing steering to: %s", steering_topic_.c_str());
   RCLCPP_INFO(get_logger(), "Publishing throttle to: %s", throttle_topic_.c_str());
   RCLCPP_INFO(get_logger(), "Publishing brake to: %s", brake_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "Publishing gear to: %s", gear_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "Publishing start to: %s", start_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "Publishing panic to: %s", panic_topic_.c_str());
+  RCLCPP_INFO(get_logger(), "Publishing mode to: %s", mode_topic_.c_str());
 }
 
 void WebRTCBridgeNode::image_callback(const sensor_msgs::msg::Image::SharedPtr msg)
@@ -193,6 +209,18 @@ void WebRTCBridgeNode::on_binary_message(const std::string& peer_id,
   } else if (channel_label == "brake") {
     brake_publisher_->publish(msg);
     RCLCPP_DEBUG(get_logger(), "Brake from %s: %d", peer_id.c_str(), value);
+  } else if (channel_label == "gear") {
+    gear_publisher_->publish(msg);
+    RCLCPP_DEBUG(get_logger(), "Gear from %s: %d", peer_id.c_str(), value);
+  } else if (channel_label == "start") {
+    start_publisher_->publish(msg);
+    RCLCPP_DEBUG(get_logger(), "Start from %s: %d", peer_id.c_str(), value);
+  } else if (channel_label == "panic") {
+    panic_publisher_->publish(msg);
+    RCLCPP_WARN(get_logger(), "PANIC from %s: %d", peer_id.c_str(), value);
+  } else if (channel_label == "mode") {
+    mode_publisher_->publish(msg);
+    RCLCPP_INFO(get_logger(), "Mode from %s: %d", peer_id.c_str(), value);
   }
 }
 

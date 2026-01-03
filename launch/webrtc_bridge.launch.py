@@ -37,20 +37,44 @@ def generate_launch_description():
 
     steering_topic_arg = DeclareLaunchArgument(
         'steering_topic',
-        default_value='/steering',
+        default_value='/x1_teleop/from/steering',
         description='ROS2 Int16 topic for steering values from WebRTC clients'
     )
 
     throttle_topic_arg = DeclareLaunchArgument(
         'throttle_topic',
-        default_value='/throttle',
+        default_value='/x1_teleop/from/throttle',
         description='ROS2 Int16 topic for throttle values from WebRTC clients'
     )
 
     brake_topic_arg = DeclareLaunchArgument(
         'brake_topic',
-        default_value='/brake',
+        default_value='/x1_teleop/from/brake',
         description='ROS2 Int16 topic for brake values from WebRTC clients'
+    )
+
+    gear_topic_arg = DeclareLaunchArgument(
+        'gear_topic',
+        default_value='/x1_teleop/from/gear',
+        description='ROS2 Int16 topic for gear values from WebRTC clients (0=P, 1=R, 2=F, 3=L)'
+    )
+
+    start_topic_arg = DeclareLaunchArgument(
+        'start_topic',
+        default_value='/x1_teleop/from/start',
+        description='ROS2 Int16 topic for start button (1=pressed, 0=released)'
+    )
+
+    panic_topic_arg = DeclareLaunchArgument(
+        'panic_topic',
+        default_value='/x1_teleop/from/panic',
+        description='ROS2 Int16 topic for panic stop button (1=pressed, 0=released)'
+    )
+
+    mode_topic_arg = DeclareLaunchArgument(
+        'mode_topic',
+        default_value='/x1_teleop/from/mode',
+        description='ROS2 Int16 topic for mode values (0=IDLE, 1=CONFIG, 2=RUN, 3=MANUAL)'
     )
 
     video_width_arg = DeclareLaunchArgument(
@@ -109,6 +133,10 @@ def generate_launch_description():
             'steering_topic': LaunchConfiguration('steering_topic'),
             'throttle_topic': LaunchConfiguration('throttle_topic'),
             'brake_topic': LaunchConfiguration('brake_topic'),
+            'gear_topic': LaunchConfiguration('gear_topic'),
+            'start_topic': LaunchConfiguration('start_topic'),
+            'panic_topic': LaunchConfiguration('panic_topic'),
+            'mode_topic': LaunchConfiguration('mode_topic'),
             'video_width': LaunchConfiguration('video_width'),
             'video_height': LaunchConfiguration('video_height'),
             'video_fps': LaunchConfiguration('video_fps'),
@@ -143,6 +171,10 @@ def generate_launch_description():
         steering_topic_arg,
         throttle_topic_arg,
         brake_topic_arg,
+        gear_topic_arg,
+        start_topic_arg,
+        panic_topic_arg,
+        mode_topic_arg,
         video_width_arg,
         video_height_arg,
         video_fps_arg,

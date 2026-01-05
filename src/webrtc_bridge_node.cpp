@@ -128,13 +128,13 @@ void WebRTCBridgeNode::initialize_components()
     std::bind(&WebRTCBridgeNode::image_callback, this, std::placeholders::_1)
   );
 
-  steering_publisher_ = create_publisher<std_msgs::msg::Int16>(steering_topic_, 10);
-  throttle_publisher_ = create_publisher<std_msgs::msg::Int16>(throttle_topic_, 10);
-  brake_publisher_ = create_publisher<std_msgs::msg::Int16>(brake_topic_, 10);
-  gear_publisher_ = create_publisher<std_msgs::msg::Int16>(gear_topic_, 10);
-  start_publisher_ = create_publisher<std_msgs::msg::Int16>(start_topic_, 10);
-  panic_publisher_ = create_publisher<std_msgs::msg::Int16>(panic_topic_, 10);
-  mode_publisher_ = create_publisher<std_msgs::msg::Int16>(mode_topic_, 10);
+  steering_publisher_ = create_publisher<x1_msgs::msg::SteeringCommand>(steering_topic_, 10);
+  throttle_publisher_ = create_publisher<x1_msgs::msg::ThrottleCommand>(throttle_topic_, 10);
+  brake_publisher_ = create_publisher<x1_msgs::msg::BrakeCommand>(brake_topic_, 10);
+  gear_publisher_ = create_publisher<x1_msgs::msg::GearCommand>(gear_topic_, 10);
+  start_publisher_ = create_publisher<x1_msgs::msg::StarterCommand>(start_topic_, 10);
+  panic_publisher_ = create_publisher<x1_msgs::msg::PanicCommand>(panic_topic_, 10);
+  mode_publisher_ = create_publisher<x1_msgs::msg::ModeCommand>(mode_topic_, 10);
 
   RCLCPP_INFO(get_logger(), "Subscribed to image topic: %s", video_topic_.c_str());
   RCLCPP_INFO(get_logger(), "Publishing steering to: %s", steering_topic_.c_str());
@@ -197,29 +197,63 @@ void WebRTCBridgeNode::on_binary_message(const std::string& peer_id,
     (static_cast<uint8_t>(data[1]) << 8)
   );
 
+  if (channel_label == "steering") {
+    x1_msgs::msg::SteeringCommand steering_msg;
+    steering_msg.header.stamp = now();
+    steering_msg.steering_angle = static_cast<float>(value);
+    steering_msg.steering_rate = 0.0F;
+
+    steering_publisher_->publish(steering_msg);
+    RCLCPP_DEBUG(get_logger(), "Steering from %s: %d", peer_id.c_str(), value);
+    return;
+  }
+
   auto msg = std_msgs::msg::Int16();
   msg.data = value;
 
-  if (channel_label == "steering") {
-    steering_publisher_->publish(msg);
-    RCLCPP_DEBUG(get_logger(), "Steering from %s: %d", peer_id.c_str(), value);
-  } else if (channel_label == "throttle") {
-    throttle_publisher_->publish(msg);
+  if (channel_label == "throttle") {
+    x1_msgs::msg::ThrottleCommand throttle_msg;
+    throttle_msg.header.stamp = now();
+    throttle_msg.throttle = static_cast<uint16_t>(value);
+    throttle_msg.ramp_rate = 0;
+
+    throttle_publisher_->publish(throttle_msg);
     RCLCPP_DEBUG(get_logger(), "Throttle from %s: %d", peer_id.c_str(), value);
   } else if (channel_label == "brake") {
-    brake_publisher_->publish(msg);
+    x1_msgs::msg::BrakeCommand brake_msg;
+    brake_msg.header.stamp = now();
+    brake_msg.brake = static_cast<uint16_t>(value);
+    brake_msg.emergency = false;
+
+    brake_publisher_->publish(brake_msg);
     RCLCPP_DEBUG(get_logger(), "Brake from %s: %d", peer_id.c_str(), value);
   } else if (channel_label == "gear") {
-    gear_publisher_->publish(msg);
+    x1_msgs::msg::GearCommand gear_msg;
+    gear_msg.header.stamp = now();
+    gear_msg.gear = static_cast<uint8_t>(value);
+
+    gear_publisher_->publish(gear_msg);
     RCLCPP_DEBUG(get_logger(), "Gear from %s: %d", peer_id.c_str(), value);
   } else if (channel_label == "start") {
-    start_publisher_->publish(msg);
+    x1_msgs::msg::StarterCommand start_msg;
+    start_msg.header.stamp = now();
+    start_msg.value = static_cast<uint8_t>(value);
+
+    start_publisher_->publish(start_msg);
     RCLCPP_DEBUG(get_logger(), "Start from %s: %d", peer_id.c_str(), value);
   } else if (channel_label == "panic") {
-    panic_publisher_->publish(msg);
+    x1_msgs::msg::PanicCommand panic_msg;
+    panic_msg.header.stamp = now();
+    panic_msg.value = static_cast<uint8_t>(value);
+
+    panic_publisher_->publish(panic_msg);
     RCLCPP_WARN(get_logger(), "PANIC from %s: %d", peer_id.c_str(), value);
   } else if (channel_label == "mode") {
-    mode_publisher_->publish(msg);
+    x1_msgs::msg::ModeCommand mode_msg;
+    mode_msg.header.stamp = now();
+    mode_msg.mode = static_cast<uint8_t>(value);
+
+    mode_publisher_->publish(mode_msg);
     RCLCPP_INFO(get_logger(), "Mode from %s: %d", peer_id.c_str(), value);
   }
 }

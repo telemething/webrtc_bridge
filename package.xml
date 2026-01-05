@@ -14,6 +14,7 @@
   <depend>sensor_msgs</depend>
   <depend>cv_bridge</depend>
   <depend>image_transport</depend>
+  <depend>x1_msgs</depend>
 
   <build_depend>OpenCV</build_depend>
   <build_depend>libssl-dev</build_depend>

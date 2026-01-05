@@ -9,6 +9,13 @@
 
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/image.hpp>
+#include <x1_msgs/msg/steering_command.hpp>
+#include <x1_msgs/msg/throttle_command.hpp>
+#include <x1_msgs/msg/brake_command.hpp>
+#include <x1_msgs/msg/gear_command.hpp>
+#include <x1_msgs/msg/mode_command.hpp>
+#include <x1_msgs/msg/starter_command.hpp>
+#include <x1_msgs/msg/panic_command.hpp>
 #include <std_msgs/msg/int16.hpp>
 #include <cv_bridge/cv_bridge.h>
 
@@ -124,13 +131,13 @@ private:
 
   // ROS2 interfaces
   rclcpp::Subscription<sensor_msgs::msg::Image>::SharedPtr image_subscription_;
-  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr steering_publisher_;
-  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr throttle_publisher_;
-  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr brake_publisher_;
-  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr gear_publisher_;
-  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr start_publisher_;
-  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr panic_publisher_;
-  rclcpp::Publisher<std_msgs::msg::Int16>::SharedPtr mode_publisher_;
+  rclcpp::Publisher<x1_msgs::msg::SteeringCommand>::SharedPtr steering_publisher_;
+  rclcpp::Publisher<x1_msgs::msg::ThrottleCommand>::SharedPtr throttle_publisher_;
+  rclcpp::Publisher<x1_msgs::msg::BrakeCommand>::SharedPtr brake_publisher_;
+  rclcpp::Publisher<x1_msgs::msg::GearCommand>::SharedPtr gear_publisher_;
+  rclcpp::Publisher<x1_msgs::msg::StarterCommand>::SharedPtr start_publisher_;
+  rclcpp::Publisher<x1_msgs::msg::PanicCommand>::SharedPtr panic_publisher_;
+  rclcpp::Publisher<x1_msgs::msg::ModeCommand>::SharedPtr mode_publisher_;
 };
 
 }  // namespace webrtc_bridge

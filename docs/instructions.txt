@@ -87,4 +87,10 @@ try:
   - MAKEFLAGS="-j1" - Single-threaded build to avoid GCC internal compiler error
   - colcon build - Standard ROS2 build
 
-  > MAKEFLAGS="-j1" colcon build
+  > colcon build --cmake-args -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+
+  if that doesnt work then
+
+  > MAKEFLAGS="-j1" colcon build --cmake-args -DCMAKE_POLICY_VERSION_MINIMUM=3.5
+
+
